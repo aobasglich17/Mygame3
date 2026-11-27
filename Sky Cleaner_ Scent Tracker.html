@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sky Cleaner: Scent Tracker</title>
+<style>
+:root{
+  --ink:#0b3a63; --card:rgba(255,255,255,.66); --edge:rgba(255,255,255,.92);
+  --bg:linear-gradient(180deg,#8fd6ff 0%,#d9f4ff 50%,#c6f0b4 100%);
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ink:#e8f6ff;--card:rgba(10,50,90,.6);--edge:rgba(160,220,255,.5);--bg:linear-gradient(180deg,#06304f,#0b5a8a 55%,#1a6b3a)}}
+:root[data-theme="dark"]{--ink:#e8f6ff;--card:rgba(10,50,90,.6);--edge:rgba(160,220,255,.5);--bg:linear-gradient(180deg,#06304f,#0b5a8a 55%,#1a6b3a)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg);background-attachment:fixed;color:var(--ink);
+ font-family:"Segoe UI","Trebuchet MS","Helvetica Neue",Arial,sans-serif;overflow-x:hidden}
+.bubble{position:fixed;border-radius:50%;pointer-events:none;z-index:0;border:1px solid rgba(255,255,255,.7);
+ background:radial-gradient(circle at 30% 28%,rgba(255,255,255,.95),rgba(255,255,255,.25) 35%,rgba(120,200,255,.18) 70%);animation:float 9s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
+main{position:relative;z-index:1;max-width:640px;margin:0 auto;padding:18px 14px 36px}
+.glass{background:var(--card);border:2px solid var(--edge);border-radius:26px;position:relative;overflow:hidden;
+ box-shadow:0 12px 32px rgba(20,100,170,.28),inset 0 2px 0 rgba(255,255,255,.95),inset 0 -12px 24px rgba(120,210,255,.25);
+ backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.glass::before{content:"";position:absolute;left:0;right:0;top:0;height:40%;background:linear-gradient(180deg,rgba(255,255,255,.5),transparent);pointer-events:none}
+.panel{padding:22px 18px;margin-bottom:14px}
+h1{margin:0 0 6px;text-align:center;font-size:clamp(28px,6.5vw,44px);line-height:1.1;font-weight:800;
+ background:linear-gradient(180deg,#ff5a4a,#c2162c 55%,#6a1a5a);-webkit-background-clip:text;background-clip:text;color:transparent;
+ filter:drop-shadow(0 2px 0 rgba(255,255,255,.85))}
+h2{margin:0 0 8px;font-size:24px;text-align:center}
+.sub{text-align:center;font-size:17px;line-height:1.5;margin:0 auto 12px;max-width:50ch}
+.row{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0}
+.chip{padding:6px 14px;border-radius:999px;font-weight:700;font-size:15px;background:linear-gradient(180deg,#fff,#d6f0ff);border:2px solid #fff;box-shadow:0 3px 8px rgba(30,120,200,.25);color:#0b3a63}
+.btn{font:inherit;font-weight:700;font-size:18px;color:#fff;cursor:pointer;border:2px solid rgba(255,255,255,.9);border-radius:999px;
+ padding:13px 34px;display:block;margin:12px auto 0;position:relative;overflow:hidden;
+ background:linear-gradient(180deg,#7de35a,#37b84a 52%,#1f9a3a 53%,#4fd05c);text-shadow:0 1px 2px rgba(0,70,20,.6);
+ box-shadow:0 6px 16px rgba(30,150,60,.45),inset 0 2px 0 rgba(255,255,255,.85);transition:transform .12s}
+.btn::before{content:"";position:absolute;left:8%;right:8%;top:3px;height:42%;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.75),rgba(255,255,255,.1))}
+.btn:active{transform:scale(.97)}
+.btn:focus-visible,.tile:focus-visible{outline:4px solid #ffe27a;outline-offset:2px}
+.legend{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;font-size:13px;font-weight:700;margin:6px 0 10px;align-items:center}
+.legend i{display:inline-block;width:18px;height:18px;border-radius:6px;border:2px solid #fff}
+.grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+.tile{aspect-ratio:1;border-radius:14px;border:2px solid #fff;cursor:pointer;position:relative;overflow:hidden;padding:0;
+ display:flex;flex-direction:column;align-items:center;justify-content:center;font:inherit;color:#0b3a63;
+ background:linear-gradient(180deg,#ffffff 0%,#dff4ff 55%,#bfe6ff 56%,#e6f8ff 100%);
+ box-shadow:0 3px 8px rgba(30,120,200,.25),inset 0 2px 0 #fff;transition:transform .12s}
+.tile:hover:not(:disabled){transform:translateY(-2px)}
+.tile:disabled{cursor:default}
+.tile .t{font-size:clamp(14px,3.8vw,22px);opacity:.5;line-height:1}
+.tile .s{font-size:clamp(7px,2vw,11px);font-weight:800;letter-spacing:1px;line-height:1;margin-top:2px}
+.tile .big{font-size:clamp(18px,5vw,28px);opacity:1}
+.s0{background:linear-gradient(180deg,#d6ecff,#7fb6ee 55%,#5a9ae0 56%,#9ccaf5)}
+.s1{background:linear-gradient(180deg,#d9fbff,#7fe0ee 55%,#3cc4da 56%,#8aeaf2)}
+.s2{background:linear-gradient(180deg,#f2ffd0,#d4ef6a 55%,#b4d83a 56%,#d8f27e)}
+.s3{background:linear-gradient(180deg,#fff0c8,#ffbb55 55%,#f29a22 56%,#ffc470)}
+.s4{background:linear-gradient(180deg,#ffe1da,#ff7a62 55%,#e5483a 56%,#ff8f78);color:#5a0c05}
+.found{background:linear-gradient(180deg,#d9ffc2,#86e063 55%,#4fc24a 56%,#8fe879)}
+.bad{background:linear-gradient(180deg,#e6d6ff,#b48ae8 55%,#8a5ad0 56%,#b894ee)}
+.msg{margin-top:12px;padding:12px 16px;border-radius:18px;background:rgba(255,255,255,.8);border:2px solid #fff;line-height:1.5;color:#0b3a63;min-height:56px}
+.msg b{display:block}
+.hidden{display:none}
+.box{margin:10px 0;padding:12px 16px;border-radius:18px;background:rgba(255,255,255,.8);border:2px solid #fff;color:#0b3a63;line-height:1.5}
+.box b{display:block;margin-bottom:2px}
+ul{margin:6px 0 0;padding-left:20px}
+.foot{text-align:center;font-weight:700;opacity:.85}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="bubble" style="width:90px;height:90px;left:3%;top:14%"></div>
+<div class="bubble" style="width:46px;height:46px;right:6%;top:26%;animation-delay:-3s"></div>
+<div class="bubble" style="width:120px;height:120px;right:-30px;top:62%;animation-delay:-5s"></div>
+
+<main>
+  <section id="start" class="glass panel">
+    <h1>The Red-Headed<br>Sky Cleaner</h1>
+    <p class="sub">The Turkey Vulture has an unusually strong sense of smell for a bird. Sniff the landscape to find the carrion, but watch out for human-made hazards hidden below.</p>
+    <div class="row">
+      <span class="chip">👃 Tap a tile to sniff</span>
+      <span class="chip">🔥 Warmer = closer</span>
+      <span class="chip">☠️ Hazards cost a heart</span>
+      <span class="chip">5 rounds</span>
+    </div>
+    <button class="btn" id="go">Start sniffing</button>
+  </section>
+
+  <section id="game" class="glass panel hidden">
+    <div class="row" style="margin-top:0">
+      <span class="chip" id="hRound"></span><span class="chip" id="hScore"></span>
+      <span class="chip" id="hSniff"></span><span class="chip" id="hHeart"></span>
+    </div>
+    <div class="legend" aria-hidden="true">
+      <span>Cold</span><i class="s0"></i><i class="s1"></i><i class="s2"></i><i class="s3"></i><i class="s4"></i><span>Hot</span>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="msg" id="msg" role="status" aria-live="polite"></div>
+    <button class="btn hidden" id="next">Next round</button>
+  </section>
+
+  <section id="over" class="glass panel hidden">
+    <h2 id="oTitle"></h2>
+    <div class="row"><span class="chip" id="oScore"></span><span class="chip" id="oFound"></span></div>
+    <p class="sub" id="oMsg"></p>
+    <div class="box"><b>How can we protect it?</b>Reduce lead contamination, use safer wildlife practices, avoid poisoning, protect roosting and nesting places, and drive carefully in areas where vultures feed.</div>
+    <div class="box"><b>Facts you unlocked</b><ul id="oList"></ul></div>
+    <button class="btn" id="again">Play again</button>
+  </section>
+  <p class="foot">Nature’s cleanup crew deserves our protection. 🌍</p>
+</main>
+
+<script>
+const $=id=>document.getElementById(id),COLS=8,ROWS=6,ROUNDS=5,SNIFFS=[8,8,7,7,6];
+const TERR=[["🌲","Woodland"],["🌲","Woodland"],["🌾","Grassland"],["🌾","Grassland"],["🌵","Desert"],["⛰️","Foothills"],["⛰️","Foothills"],["🏘️","Urban edge"]];
+const HAZ=[
+ {e:"☠️",n:"Lead from ammunition",t:"Lead poisoning from ammunition is a real threat. Reducing lead contamination helps."},
+ {e:"🐀",n:"Rodenticide",t:"Rodenticides poison animals that vultures later eat. Avoid poisoning."},
+ {e:"🚗",n:"Vehicle collision",t:"Vehicle collisions are a hazard. Drive carefully in areas where vultures feed."}];
+const FACTS=[
+ "It has an unusually strong sense of smell for a bird.",
+ "It helps ecosystems by removing carcasses.",
+ "It often glides with very few wingbeats.",
+ "It soars for hours on warm air currents and holds its wings in a shallow V.",
+ "It uses keen smell and sight to locate food.",
+ "Its common name is Turkey Vulture, also called Red-headed Vulture or Gallinaza cabecirroja. Its scientific name is Cathartes aura.",
+ "It lives from southern Canada through Central America and the Caribbean to South America.",
+ "It lives in open woodlands, grasslands, deserts, foothills, countryside and some urban edges.",
+ "It has a dark brown-black body, a bare red head, a pale hooked bill and gray flight feathers."];
+let R,score,hearts,found,facts,over;
+const rnd=n=>Math.floor(Math.random()*n);
+function chips(){$("hRound").textContent="Round "+(R.n+1)+" of "+ROUNDS;$("hScore").textContent="Score: "+score;$("hSniff").textContent="👃 "+R.left;$("hHeart").textContent="❤️".repeat(hearts)+"🖤".repeat(3-hearts)}
+function show(id){["start","game","over"].forEach(s=>$(s).classList.toggle("hidden",s!==id))}
+function setMsg(t,h){$("msg").innerHTML="<b>"+t+"</b>"+(h||"")}
+
+function round(n){
+  const cells=[...Array(COLS*ROWS).keys()].sort(()=>Math.random()-.5);
+  const hz=1+Math.floor((n+1)/2);
+  R={n,left:SNIFFS[n],target:cells[0],hz:{},done:false};
+  cells.slice(1,1+hz).forEach((c,i)=>R.hz[c]=HAZ[(i+n)%HAZ.length]);
+  const g=$("grid");g.innerHTML="";
+  for(let i=0;i<COLS*ROWS;i++){
+    const b=document.createElement("button");b.className="tile";b.dataset.i=i;
+    const tr=TERR[i%COLS];b.setAttribute("aria-label",tr[1]+" tile, not sniffed");
+    b.innerHTML='<span class="t">'+tr[0]+'</span><span class="s"></span>';
+    b.onclick=()=>sniff(i,b);g.appendChild(b);
+  }
+  $("next").classList.add("hidden");chips();
+  setMsg("A carcass is hidden somewhere below.","You have "+R.left+" sniffs. Warmer colors mean it is closer. "+hz+" hidden hazard"+(hz>1?"s":"")+" this round.");
+}
+function paint(b,cls,html,label){b.disabled=true;b.className="tile "+cls;b.innerHTML=html;b.setAttribute("aria-label",label)}
+function sniff(i,b){
+  if(R.done)return;R.left--;
+  const x=i%COLS,y=Math.floor(i/COLS),tx=R.target%COLS,ty=Math.floor(R.target/COLS);
+  if(i===R.target){
+    const pts=100+R.left*15;score+=pts;found++;R.done=true;
+    paint(b,"found",'<span class="big">🍖</span>',"Carrion found");
+    const f=FACTS[facts.length];if(f)facts.push(f);
+    chips();finishRound("Found it! +"+pts+" points",f?"Fact unlocked: "+f:"All facts unlocked. Great nose!");return;
+  }
+  if(R.hz[i]){
+    const h=R.hz[i];hearts--;
+    paint(b,"bad",'<span class="big">'+h.e+'</span>',"Hazard: "+h.n);chips();
+    if(hearts<=0){return end(false)}
+    setMsg("Ouch! "+h.n,h.t);
+  }else{
+    const d=Math.hypot(x-tx,y-ty),s=Math.max(0,Math.min(4,5-Math.round(d)));
+    const words=["Very faint","Faint","Medium","Strong","Very strong"];
+    paint(b,"s"+s,'<span class="s">'+"●".repeat(s)+"○".repeat(4-s)+"</span>","Scent: "+words[s]);
+    setMsg("Scent: "+words[s],s>=3?"You are getting close!":s>=2?"Keep going, the smell is building.":"Try another area.");
+    b.querySelector(".s").style.fontSize="clamp(8px,2.4vw,13px)";
+  }
+  chips();
+  if(R.left<=0&&!R.done){
+    R.done=true;const t=document.querySelector('.tile[data-i="'+R.target+'"]');
+    paint(t,"found",'<span class="big">🍖</span>',"Carrion location");
+    finishRound("Out of sniffs","The carrion was here. Try a warmer path next round.");
+  }
+}
+function finishRound(t,h){
+  document.querySelectorAll(".tile").forEach(b=>b.disabled=true);
+  setMsg(t,h);const n=$("next");n.textContent=R.n===ROUNDS-1?"See results":"Next round";n.classList.remove("hidden");n.focus();
+}
+function end(alive){
+  document.querySelectorAll(".tile").forEach(b=>b.disabled=true);
+  show("over");
+  const rank=score>=700?"Sky Cleaner":score>=350?"Thermal Rider":"Rookie Sniffer";
+  $("oTitle").textContent=alive?"You are a "+rank+"!":"Too many hazards!";
+  $("oScore").textContent="Score: "+score;$("oFound").textContent="🍖 "+found+" of "+ROUNDS+" found";
+  $("oMsg").textContent=alive?"Nature’s cleanup crew keeps ecosystems healthy by removing carcasses.":"Lead, poison and traffic are human-related hazards that threaten vultures. Reducing them helps these birds survive.";
+  const L=$("oList");L.innerHTML="";
+  (facts.length?facts:["Find a carcass to unlock your first fact."]).forEach(f=>{const li=document.createElement("li");li.textContent=f;L.appendChild(li)});
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function begin(){score=0;hearts=3;found=0;facts=[];show("game");round(0)}
+$("go").onclick=begin;$("again").onclick=begin;
+$("next").onclick=()=>{R.n===ROUNDS-1?end(true):round(R.n+1)};
+</script>
+</body>
+</html>
